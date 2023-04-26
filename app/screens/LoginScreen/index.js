@@ -69,7 +69,7 @@ const LoginScreen = () => {
    */
   const getLoginUserData = token => {
     const response = instagramLoginActionService(token);
-    navigation.navigate('dashboard');
+    console.log(response);
   };
 
   /**
