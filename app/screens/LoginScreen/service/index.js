@@ -3,6 +3,7 @@ import {
   GraphRequest,
   GraphRequestManager,
 } from 'react-native-fbsdk-next';
+import baseURL from '../../../utils/baseUrl';
 
 export const loginActionService = async () => {
   try {
@@ -47,4 +48,32 @@ export const instagramLoginActionService = async data => {
     .catch(error => {
       console.error(error);
     });
+};
+
+/**
+ * Generate Access Token
+ * @param {*} data // OAuth Client
+ * @returns // Access Token
+ */
+export const getAccessToken = async data => {
+  try {
+    const response = await baseURL.post('oauth/issueToken', data);
+    console.log('RES : ' + response);
+    return response;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+/**
+ * User Login
+ * @param {*} data // user data
+ * @param {*} token // access token
+ * @returns
+ */
+export const userSignIn = async (data, token) => {
+  const response = await baseURL.post('api/v1/login', data, {
+    headers: {Authorization: 'Bearer ' + token},
+  });
+  return response;
 };

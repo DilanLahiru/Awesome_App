@@ -1,11 +1,12 @@
 import {SafeAreaView, Image, TouchableOpacity} from 'react-native';
 import {Stack, Text, Input} from 'native-base';
-import React, {useLayoutEffect, useState, useRef} from 'react';
+import React, {useLayoutEffect, useState, useEffect, useRef} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {LoginManager} from 'react-native-fbsdk-next';
 import LottieView from 'lottie-react-native';
 import InstagramLogin from 'react-native-instagram-login';
 import {useDispatch} from 'react-redux';
+import Toast from 'react-native-toast-message';
 
 // #region assets | components
 import Header from '../../components/header';
@@ -15,10 +16,19 @@ import Instagram from '../../assets/icons/icon_instagram.png';
 import {SCREEN_WIDTH, SCREEN_HEIGHT} from '../../components/theme/index';
 
 // #region imports
-import {setLoginUserData} from '../../reducer/DashboardReducer';
+import {
+  setLoginUserData,
+  setLoginUserAccessToken,
+} from '../../reducer/DashboardReducer';
+import {OAuthClient} from '../../utils/oauthClient';
 
 // #endregion imports
-import {loginActionService, instagramLoginActionService} from './service/index';
+import {
+  loginActionService,
+  instagramLoginActionService,
+  getAccessToken,
+  userSignIn,
+} from './service/index';
 import {styles} from './style';
 
 const LoginScreen = () => {
@@ -30,12 +40,31 @@ const LoginScreen = () => {
   const [userName, setUserName] = useState('');
   // ** This state use to store password
   const [password, setPassword] = useState('');
+  // ** This state use to store password
+  const [userToken, setUserToken] = useState('');
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
+    //getToken();
   });
+
+  useEffect(() => {
+    getToken();
+  }, []);
+
+  const getToken = async () => {
+    console.log(OAuthClient);
+    try {
+      const data = await getAccessToken(OAuthClient);
+      console.log(data.data);
+      setUserToken(data.data.access_token);
+      dispatch(setLoginUserAccessToken(data.data.access_token));
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   /**
    * This function use to store userName to app state
@@ -57,10 +86,35 @@ const LoginScreen = () => {
    * This function use to login user to app
    */
   const userLogin = async () => {
-    let obj = {
-      username: userName,
-      password: password,
-    };
+    try {
+      let obj = {
+        username: userName,
+        password: password,
+      };
+      const response = await userSignIn(obj, userToken);
+      console.log(response.data);
+      if (response.status === 200) {
+        dispatch(setLoginUserData(response.data.user));
+        Toast.show({
+          type: 'success',
+          text1: 'AWESOME APP',
+          text2: 'Login Success',
+          visibilityTime: 2000,
+          autoHide: true,
+        });
+        navigation.navigate('dashboard');
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'AWESOME APP',
+          text2: response.data.error.text,
+          visibilityTime: 2000,
+          autoHide: true,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   /**
